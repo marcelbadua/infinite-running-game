@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src=".\bower_components\phaser\dist\phaser.min.js"></script>
+  <style type="text/css">
+      body {
+          margin: 0;
+      }
+  </style>
+</head>
+<body>
+
+  <script>
+    var score = 0;
+    var scoreText;
+    var platforms;
+    var player;
+    var balls;
+    var ball;
+    var gameOver = false;
+
+    var config = {
+      type: Phaser.AUTO,
+      width: 800,
+      height: 600,
+      physics: {
+        default: 'arcade',
+        arcade: {
+          gravity: {
+            y: 475
+          },
+          debug: false
+        }
+      },
+      scene: {
+        preload: preload,
+        create: create,
+        update: update
+      }
+    };
+
+    var game = new Phaser.Game(config);
+
+    function preload()
+    {
+      this.load.image('sky', 'assets/sky.png');
+      this.load.image('ground', 'assets/platform.png');
+      this.load.spritesheet('dog', 'assets/dog.png', { frameWidth: 61, frameHeight: 94 });
+      this.load.spritesheet('ball', 'assets/ball.png', { frameWidth: 40, frameHeight: 40 });
+    }
+
+    function create()
+    {
+
+      this.add.image(400, 300, 'sky');
+
+      platforms = this.physics.add.staticGroup();
+      platforms.create(config.width / 2 , config.height - 50, 'ground');
+
+      player = this.physics.add.sprite( config.width / 4 , config.height - ( 100 + (94 / 2)), 'dog');
+      player.setBounce(0.1);
+      player.setCollideWorldBounds(true);
+
+      balls = this.physics.add.group();
+      createBall();
+
+      this.physics.add.collider(player, platforms);
+      this.physics.add.collider(balls, platforms);
+
+      this.physics.add.overlap(player, balls, hitBall, null, this);
+
+      scoreText = this.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#ffffff' });
+
+      this.anims.create({
+          key: 'jump',
+          frames: [ { key: 'dog', frame: 2 } ],
+          frameRate: 20,
+          repeat: 0
+      });
+      this.anims.create({
+          key: 'run',
+          frames: this.anims.generateFrameNumbers('dog'),
+          framerate: 6,
+          yoyo: false,
+          repeat: -1
+      });
+      this.anims.create({
+          key: 'roll',
+          frames: this.anims.generateFrameNumbers('ball'),
+          framerate: 6,
+          yoyo: false,
+          repeat: -1
+      });
+      jump = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    }
+
+    function update()
+    {
+      if (gameOver) {
+          return;
+      } else {
+        score += 1;
+        scoreText.setText('Score: ' + score);
+      }
+      if (jump.isDown && player.body.touching.down) {
+        player.setVelocityY(-250);
+      }
+      if ( !(player.body.touching.down) ) {
+        player.anims.play('jump');
+      } else  {
+        player.anims.play('run', true);
+      }
+    }
+
+    function hitBall(player, ball)
+    {
+      this.physics.pause();
+      player.setTint(0xff0000);
+      player.anims.play('jump');
+      gameOver = true;
+    }
+
+    function createBall()
+    {
+      var ball = balls.create( config.width , config.height - 150 , 'ball');
+      ball.setVelocityX(-250);
+      ball.setBounce(0.75);
+      ball.allowGravity = true;
+      setTimeout(function() { createBall() }, Phaser.Math.Between(1100, 2000) );
+    }
+  </script>
+
+</body>
+</html>
